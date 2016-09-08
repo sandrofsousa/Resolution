@@ -36,6 +36,7 @@ class Metrics(object):
         self.sum_pop = np.sum(self.pop, axis = 1)
         return self.attriMatrix
 
+
     # this part could be optimised
     def cal_location_subgroup(self,locations,sub_pop, dis = 5000, n_pnt = 10000):
         n_local = len(locations[:,1])
@@ -44,6 +45,7 @@ class Metrics(object):
         for index_sub in range(0,n_subgroup):
             locality_sub[:,index_sub] = self.cal_locality_sum(locations,sub_pop[:,index_sub],dis, n_pnt)
         return np.asarray(locality_sub)
+
 
     def readCostMatrix(self, filePath):
         self.costMatrix = np.matrix(pd.read_csv(filePath, header = None))
@@ -69,6 +71,7 @@ class Metrics(object):
         self.locality[np.where(self.locality<0)[0],np.where(self.locality<0)[1]]=0
         return locality_temp
 
+
     def getNeighbor(self,index, locations, dis = 5000, n_pnt = 10000):
         loc = locations[index,:]
         distance = np.asarray(locations[:,0] - loc[0,0])*np.asarray(locations[:,0] - loc[0,0]) + np.asarray(locations[:,1] - loc[0,1])*np.asarray(locations[:,1] - loc[0,1])
@@ -79,9 +82,12 @@ class Metrics(object):
         sel_location[:,1] = distance[sel_loc[0],0]
         return sel_location
 
+
     # locality_sum = is the sum of pop intensity in number of areas - is an array of size j
     # locality_sub is the sub of pop intensity in number of areas - is an matrix of size j*m
     def cal_localDissimilarity(self):
+        if len(self.locality) == 0:
+            self.locality = self.cal_localityMatrix()
         lj = np.asarray(np.sum(self.locality,axis = 1))
         tjm = self.locality*1.0/lj[:,None]
         tm = np.sum(self.pop,axis=0)*1.0/np.sum(self.pop)
@@ -92,13 +98,14 @@ class Metrics(object):
         #np.savetxt("res/d_local.csv",D_local, delimiter=",")
         return D_local
 
+    #
     def cal_globalDissimilarity(self):
         d_local = self.cal_localDissimilarity()
         return np.sum(d_local)
 
     # when m=n then it is the isolation
     # spatial exposure index of group m to group n
-    def cal_globalExposure(self):
+    def cal_globalExposure_backup(self):
         m = self.n_group
         exposure_rs = np.zeros((m,m))
         for i in range(m):
@@ -110,6 +117,30 @@ class Metrics(object):
                expo[np.isinf(expo)]=0
                expo[np.isnan(expo)]=0
                exposure_rs[i,j] = np.sum(expo)
+        return exposure_rs
+
+
+    def cal_globalExposure(self):
+        localexpo = self.cal_localExposure()
+        rs = np.sum(localexpo, axis = 0)
+        return rs
+
+
+
+    # when m=n then it is the isolation
+    # spatial exposure index of group m to group n
+    def cal_localExposure(self):
+        if len(self.locality) == 0:
+            self.locality = self.cal_localityMatrix()
+        m = self.n_group
+        j = self.n_location
+        exposure_rs = np.zeros((j,(m*m)))
+        localExpo = np.asarray(self.pop)*1.0/np.asarray(np.sum(self.pop,axis = 0)).ravel()
+        localityRate = np.asarray(self.locality)*1.0/np.asarray(np.sum(self.locality,axis = 1)).ravel()[:,None]
+        for i in range(m):
+            exposure_rs[:,((i*m)+0):((i*m)+5)] = np.asarray(localityRate)*np.asarray(localExpo[:,i]).ravel()[:,None]
+        exposure_rs[np.isinf(exposure_rs)]=0
+        exposure_rs[np.isnan(exposure_rs)]=0
         return exposure_rs
 
     # there are three ways to do weighting - gussian , bi-square and moving windows
