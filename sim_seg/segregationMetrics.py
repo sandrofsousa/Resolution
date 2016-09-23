@@ -138,7 +138,7 @@ class Metrics(object):
         localExpo = np.asarray(self.pop)*1.0/np.asarray(np.sum(self.pop,axis = 0)).ravel()
         localityRate = np.asarray(self.locality)*1.0/np.asarray(np.sum(self.locality,axis = 1)).ravel()[:,None]
         for i in range(m):
-            exposure_rs[:,((i*m)+0):((i*m)+5)] = np.asarray(localityRate)*np.asarray(localExpo[:,i]).ravel()[:,None]
+            exposure_rs[:,((i*m)+0):((i*m)+m)] = np.asarray(localityRate)*np.asarray(localExpo[:,i]).ravel()[:,None]
         exposure_rs[np.isinf(exposure_rs)]=0
         exposure_rs[np.isnan(exposure_rs)]=0
         return exposure_rs
