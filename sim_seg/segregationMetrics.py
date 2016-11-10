@@ -1,41 +1,41 @@
 import numpy as np
 import pandas as pd
 from numpy import float
-import scipy
 from scipy.spatial.distance import cdist
 
 
 class Metrics(object):
     def __init__(self):
-        self.attriMatrix = np.matrix([])
-        self.location = []
-        self.pop = []
-        self.pop_sum = []
-        self.locality = []
-        self.n_location = 0
-        self.n_group = 0
-        self.costMatrix = [] # this is the distance matrix
-        self.cord = []
+        self.attributeMatrix = np.matrix([])    # attributes matrix full size - all columns
+        self.location = []                      # x and y coordinates from file (2D lists)
+        self.pop = []                           # groups to be analysed [:,4:n] (2D lists)
+        self.pop_sum = []                       # empty result?
+        self.locality = []                      # local population intensity for groups
+        self.n_location = 0                     # length of list (n lines) (attributeMatrix.shape[0])
+        self.n_group = 0                        # number of groups (attributeMatrix.shape[1] - 4)
+        self.costMatrix = []                    # scipy cdist distance matrix
+        self.cord = []                          # empty, readcoord function, remove it?
 
-    def readCordinates(self, filepath):
-        self.cord = np.asmatrix(pd.read_csv(filepath))
-        return self.cord
+    # def readCordinates(self, filepath):
+    #     self.cord = np.asmatrix(pd.read_csv(filepath))
+    #     return self.cord
 
-    def f(self):
-        return 'hello'
-
-    def readAttributesFile(self,filePath):
-        self.attriMatrix = np.asmatrix(pd.read_csv(filePath))   # data prepared as id,  x, y , sum, attribute 1, attributes 2, attributes 3
-        n = self.attriMatrix.shape[1]
-        self.location = self.attriMatrix[:,1:3]
+    def readAttributesFile(self, filePath):
+        """
+        This function reads the csv file and populate the class attributes. Data has to be exactly in the
+        following format or results will be wrong:
+        area id,  x_coord, y_coord , sum, attribute 1, attributes 2, attributes 3, attribute n...
+        """
+        self.attributeMatrix = np.asmatrix(pd.read_csv(filePath))
+        n = self.attributeMatrix.shape[1]
+        self.location = self.attributeMatrix[:, 1:3]
         self.location = self.location.astype('float')
-        self.pop = self.attriMatrix[:,4:n].astype('int')
-        self.pop[np.where(self.pop<0)[0],np.where(self.pop<0)[1]]=0
+        self.pop = self.attributeMatrix[:, 4:n].astype('int')
+        self.pop[np.where(self.pop < 0)[0], np.where(self.pop < 0)[1]] = 0
         self.n_group = n-4
-        self.n_location = self.attriMatrix.shape[0]
-        self.sum_pop = np.sum(self.pop, axis = 1)
-        return self.attriMatrix
-
+        self.n_location = self.attributeMatrix.shape[0]
+        self.pop_sum = np.sum(self.pop, axis=1)
+        return self.attributeMatrix
 
     # this part could be optimised
     def cal_location_subgroup(self,locations,sub_pop, dis = 5000, n_pnt = 10000):
@@ -46,13 +46,17 @@ class Metrics(object):
             locality_sub[:,index_sub] = self.cal_locality_sum(locations,sub_pop[:,index_sub],dis, n_pnt)
         return np.asarray(locality_sub)
 
-
     def readCostMatrix(self, filePath):
-        self.costMatrix = np.matrix(pd.read_csv(filePath, header = None))
-        #n = self.costMatrix.shape[1]
+        """
+        This function is used in case a cost matrix was already computed outside. It allows
+        import of a local file to be represented as a distance matrix.
+        """
+        # TODO has to be tested and validated
+        self.costMatrix = np.matrix(pd.read_csv(filePath, header=None))
+        # n = self.costMatrix.shape[1]
         # self.costMatrix = self.costMatrix[:,1:n]
         self.costMatrix = self.costMatrix.astype(np.float)
-        self.costMatrix[np.isinf(self.costMatrix)]=0
+        self.costMatrix[np.isinf(self.costMatrix)] = 0
         self.costMatrix = np.nan_to_num(self.costMatrix)
         self.costMatrix = self.costMatrix
         return self.costMatrix
@@ -71,7 +75,6 @@ class Metrics(object):
         self.locality[np.where(self.locality<0)[0],np.where(self.locality<0)[1]]=0
         return locality_temp
 
-
     def getNeighbor(self,index, locations, dis = 5000, n_pnt = 10000):
         loc = locations[index,:]
         distance = np.asarray(locations[:,0] - loc[0,0])*np.asarray(locations[:,0] - loc[0,0]) + np.asarray(locations[:,1] - loc[0,1])*np.asarray(locations[:,1] - loc[0,1])
@@ -82,12 +85,11 @@ class Metrics(object):
         sel_location[:,1] = distance[sel_loc[0],0]
         return sel_location
 
-
     # locality_sum = is the sum of pop intensity in number of areas - is an array of size j
     # locality_sub is the sub of pop intensity in number of areas - is an matrix of size j*m
     def cal_localDissimilarity(self):
         if len(self.locality) == 0:
-            self.locality = self.cal_localityMatrix()
+            self.locality = self.pop  # cal_localityMatrix() using default values
         lj = np.asarray(np.sum(self.locality,axis = 1))
         tjm = self.locality*1.0/lj[:,None]
         tm = np.sum(self.pop,axis=0)*1.0/np.sum(self.pop)
@@ -119,13 +121,10 @@ class Metrics(object):
                exposure_rs[i,j] = np.sum(expo)
         return exposure_rs
 
-
     def cal_globalExposure(self):
         localexpo = self.cal_localExposure()
         rs = np.sum(localexpo, axis = 0)
         return rs
-
-
 
     # when m=n then it is the isolation
     # spatial exposure index of group m to group n
