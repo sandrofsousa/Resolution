@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from numpy import float
 from scipy.spatial.distance import cdist
+np.set_printoptions(threshold=np.inf)
 
 
 class Metrics(object):
@@ -201,7 +202,7 @@ class Metrics(object):
 
     def globalDiversity(self):
         """
-        This function computes the global entropy index (diversity score)
+        This function computes the global entropy score E (diversity). A metropolitan area’s entropy score.
         :return: diversity score
         """
         group_score = []
@@ -210,17 +211,19 @@ class Metrics(object):
         for group in prop[0]:
             group_idx = group/pop_total * np.log(1 / (group/pop_total))
             group_score.append(group_idx)
-        mscore = np.sum(group_score)
-        return mscore
+        score = np.sum(group_score)
+        return score
 
     def localDiversity(self):
         """
-        This function computes the global entropy index (diversity score)
-        :return: array with area indices
+        This function computes the local entropy score for a unit area Ei (diversity). A unit within the
+        metropolitan area, such as a census tract.
+        :return: 2d array with local indices
         """
-        proportion = np.asarray(self.pop) / self.pop_sum
-        area_idx = 1
-        return proportion
+        proportions = np.asarray(self.pop / self.pop_sum) * np.log(1 / (np.asarray(self.pop / self.pop_sum)))
+        proportions = np.nan_to_num(proportions)
+
+        return proportions
 
     def entropyIndex(self, global_diversity):
         test = 1
