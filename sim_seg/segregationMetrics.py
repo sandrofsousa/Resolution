@@ -5,7 +5,7 @@ from scipy.spatial.distance import cdist
 np.set_printoptions(threshold=np.inf)
 
 
-class Metrics(object):
+class Segreg(object):
     def __init__(self):
         self.attributeMatrix = np.matrix([])    # attributes matrix full size - all columns
         self.location = []                      # x and y coordinates from file (2D lists)
@@ -15,19 +15,12 @@ class Metrics(object):
         self.n_location = 0                     # length of list (n lines) (attributeMatrix.shape[0])
         self.n_group = 0                        # number of groups (attributeMatrix.shape[1] - 4)
         self.costMatrix = []                    # scipy cdist distance matrix
-        self.cord = []                          # empty, readcoord function, remove it?
-    # TODO remove sum from file and update index for pop, pop_sum...
-
-    # def readCordinates(self, filepath):
-    #     self.cord = np.asmatrix(pd.read_csv(filepath))
-    #     return self.cord
 
     def readAttributesFile(self, filePath):
         """
         This function reads the csv file and populate the class attributes. Data has to be exactly in the
         following format or results will be wrong:
         area id,  x_coord, y_coord , sum, attribute 1, attributes 2, attributes 3, attribute n...
-
         :param filePath: path with file to be read
         :return: attribute Matrix [n,n]
         """
@@ -42,24 +35,13 @@ class Metrics(object):
         self.pop_sum = np.sum(self.pop, axis=1)
         return self.attributeMatrix
 
-    # # this part could be optimised
-    # def cal_location_subgroup(self, locations, sub_pop, dis=5000, n_pnt=10000):
-    #     n_local = len(locations[:, 1])
-    #     n_subgroup = len(sub_pop[1, :])
-    #     locality_sub = np.empty[n_local, n_subgroup]
-    #     for index_sub in range(0, n_subgroup):
-    #         locality_sub[:, index_sub] = self.cal_locality_sum(locations, sub_pop[:, index_sub], dis, n_pnt)
-    #     return np.asarray(locality_sub)
-
     def readCostMatrix(self, filePath):
         """
         This function is used in case a cost matrix was already computed outside. It allows
         import of a local file to be represented as a distance matrix.
-
         :param filePath: path with file to be read
         :return: distance matrix [n,n]
         """
-        # TODO has to be tested and validated
         self.costMatrix = np.matrix(pd.read_csv(filePath, header=None))
         # n = self.costMatrix.shape[1]
         # self.costMatrix = self.costMatrix[:,1:n]
@@ -72,7 +54,6 @@ class Metrics(object):
     def cal_localityMatrix(self, bandwidth=5000, weightmethod=1):  # n_pnt=1000 param not being used
         """
         This function calculate the local population intensity for groups.
-
         :param bandwidth: bandwidth for neighbors in meters
         :param weightmethod: 1 for gaussian, 2 for bi-square and empty for moving window
         :return: 2d list of population intensity
@@ -89,28 +70,6 @@ class Metrics(object):
         self.locality = locality_temp
         self.locality[np.where(self.locality < 0)[0], np.where(self.locality < 0)[1]] = 0
         return locality_temp
-
-    # def getNeighbor(self, index, locations, dis=5000, n_pnt=10000):
-    #     """
-    #     Not being used...
-    #     :param index:
-    #     :param locations:
-    #     :param dis:
-    #     :param n_pnt:
-    #     :return:
-    #     """
-    #     loc = locations[index, :]
-    #     distance = np.asarray(locations[:, 0] - loc[0, 0]) * np.asarray(locations[:, 0] - loc[0, 0]) + \
-    #                np.asarray(locations[:, 1] - loc[0, 1]) * np.asarray(locations[:, 1] - loc[0, 1])
-    #     distance = np.sqrt(distance)
-    #     sel_loc = np.where(distance < dis)
-    #     sel_location = np.empty([len(sel_loc[0]), 2])
-    #     sel_location[:, 0] = sel_loc[0].T
-    #     sel_location[:, 1] = distance[sel_loc[0], 0]
-    #     return sel_location
-    #
-    # locality_sum = is the sum of pop intensity in number of areas - is an array of size j
-    # locality_sub is the sub of pop intensity in number of areas - is an matrix of size j*m
 
     def cal_localDissimilarity(self):
         """
@@ -131,27 +90,11 @@ class Metrics(object):
 
     def cal_globalDissimilarity(self):
         """
-        Call local dissimilarity and compute the sum from individual values.
+        This function call local dissimilarity and compute the sum from individual values.
         :return: global number result
         """
         d_local = self.cal_localDissimilarity()
         return np.sum(d_local)
-
-    # # when m=n then it is the isolation
-    # # spatial exposure index of group m to group n
-    # def cal_globalExposure_backup(self):
-    #     m = self.n_group
-    #     exposure_rs = np.zeros((m,m))
-    #     for i in range(m):
-    #         for j in range(m):
-    #            localExpo = np.asarray(self.pop[:,i])*1.0/np.sum(self.pop[:,i])
-    #            localityRate = np.asarray(self.locality[:,j])*1.0/np.asarray(np.sum(self.locality,axis = 1))
-    #            localityRate = np.vstack(localityRate)
-    #            expo = np.asarray(localExpo)*np.array(localityRate)
-    #            expo[np.isinf(expo)]=0
-    #            expo[np.isnan(expo)]=0
-    #            exposure_rs[i,j] = np.sum(expo)
-    #     return exposure_rs
 
     def cal_localExposure(self):
         """
@@ -173,8 +116,12 @@ class Metrics(object):
         return exposure_rs
 
     def cal_globalExposure(self):
-        localexpo = self.cal_localExposure()
-        rs = np.sum(localexpo, axis=0)
+        """
+        This function call local exposure function and sum the results for the global index.
+        :return: global number result
+        """
+        local_expo = self.cal_localExposure()
+        rs = np.sum(local_expo, axis=0)
         return rs
 
     def getWeight(self, distance, bandwidth, weightmethod=1):
@@ -200,32 +147,58 @@ class Metrics(object):
        # weight = weight/sum(weight)
         return weight
 
-    def globalDiversity(self):
+    def cal_globalEntropy(self, intensity=False):
         """
         This function computes the global entropy score E (diversity). A metropolitan area’s entropy score.
+        :param intensity: if True uses population intensity, otherwise uses raw data
         :return: diversity score
         """
         group_score = []
-        pop_total = np.sum(self.pop_sum)
-        prop = np.asarray(np.sum(self.pop, axis=0))
-        for group in prop[0]:
-            group_idx = group/pop_total * np.log(1 / (group/pop_total))
+        pop_total = []
+        prop = []
+        if intensity is False:
+            pop_total = np.sum(self.pop_sum)
+            prop = np.asarray(np.sum(self.pop, axis=0))[0]
+        else:
+            pop_total = np.sum(self.locality)
+            prop = np.asarray(np.sum(self.locality, axis=0))
+        for group in prop:
+            group_idx = group / pop_total * np.log(1 / (group / pop_total))
             group_score.append(group_idx)
-        score = np.sum(group_score)
-        return score
+        entropy = np.sum(group_score)
+        return entropy
 
-    def localDiversity(self):
+    def cal_localEntropy(self, intensity=False):
         """
         This function computes the local entropy score for a unit area Ei (diversity). A unit within the
         metropolitan area, such as a census tract.
         :return: 2d array with local indices
         """
-        proportions = np.asarray(self.pop / self.pop_sum) * np.log(1 / (np.asarray(self.pop / self.pop_sum)))
-        proportions = np.nan_to_num(proportions)
+        proportion = []
+        if intensity is False:
+            proportion = np.asarray(self.pop / self.pop_sum)
+        else:
+            proportion = np.asarray(self.locality / np.sum(self.locality))
+        entropy = proportion * np.log(1 / proportion)
+        entropy = np.nan_to_num(entropy)
+        return entropy
 
-        return proportions
+    def cal_indexH(self, local_entropy, global_entropy):
+        """
+        This function computes the global entropy index H
+        :param local_entropy: array like with local diversity for all groups
+        :param global_entropy: number with global diversity score
+        :return: array like with scores for n groups (size groups)
+        """
+        # globals = self.pop.shape[1]
 
-    def entropyIndex(self, global_diversity):
-        test = 1
+        m = self.n_group
+        j = self.n_location
+        entropy = np.zeros((j, (m * m)))
+        m = self.n_group
+        for i in range(m):
+            entropy = global_divers - self.pop[:, i]
+        # test = np.asarray(global_divers - local_divers)
+        # entropy = self.pop_sum * test  #/ global_divers * np.sum(self.pop_sum)
 
-        return test
+        return entropy
