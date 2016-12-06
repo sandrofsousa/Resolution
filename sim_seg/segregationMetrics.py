@@ -147,6 +147,21 @@ class Segreg(object):
        # weight = weight/sum(weight)
         return weight
 
+    def cal_localEntropy(self, intensity=False):
+        """
+        This function computes the local entropy score for a unit area Ei (diversity). A unit within the
+        metropolitan area, such as a census tract.
+        :return: 2d array with local indices
+        """
+        proportion = []
+        if intensity is False:
+            proportion = np.asarray(self.pop / self.pop_sum)
+        else:
+            proportion = np.asarray(self.locality / np.sum(self.locality))
+        entropy = proportion * np.log(1 / proportion)
+        entropy = np.nan_to_num(entropy)
+        return entropy
+
     def cal_globalEntropy(self, intensity=False):
         """
         This function computes the global entropy score E (diversity). A metropolitan area’s entropy score.
@@ -168,37 +183,26 @@ class Segreg(object):
         entropy = np.sum(group_score)
         return entropy
 
-    def cal_localEntropy(self, intensity=False):
+    def cal_localIndexH(self):
         """
-        This function computes the local entropy score for a unit area Ei (diversity). A unit within the
-        metropolitan area, such as a census tract.
-        :return: 2d array with local indices
-        """
-        proportion = []
-        if intensity is False:
-            proportion = np.asarray(self.pop / self.pop_sum)
-        else:
-            proportion = np.asarray(self.locality / np.sum(self.locality))
-        entropy = proportion * np.log(1 / proportion)
-        entropy = np.nan_to_num(entropy)
-        return entropy
-
-    def cal_indexH(self, local_entropy, global_entropy):
-        """
-        This function computes the global entropy index H
-        :param local_entropy: array like with local diversity for all groups
-        :param global_entropy: number with global diversity score
+        This function computes the local entropy index H for all localities.
+        The local_entropy (array like) with local diversity and the
+        global_entropy (value) diversity score are called as input.
         :return: array like with scores for n groups (size groups)
         """
-        # globals = self.pop.shape[1]
+        local_entropy = self.cal_localEntropy()
+        global_entropy = self.cal_globalEntropy()
+        et = np.asarray(global_entropy * np.sum(self.pop_sum))
+        eei = np.asarray(global_entropy - local_entropy)
+        h_local = eei * np.asarray(self.pop_sum) / et
+        return h_local
 
-        m = self.n_group
-        j = self.n_location
-        entropy = np.zeros((j, (m * m)))
-        m = self.n_group
-        for i in range(m):
-            entropy = global_divers - self.pop[:, i]
-        # test = np.asarray(global_divers - local_divers)
-        # entropy = self.pop_sum * test  #/ global_divers * np.sum(self.pop_sum)
-
-        return entropy
+    def cal_globalIndexH(self):
+        """
+        Function to compute global index H returning the sum of local values.
+        h_local is called as input.
+        :return: value with global
+        """
+        h_local = self.cal_localIndexH()
+        h_global = np.sum(h_local, axis=0)
+        return h_global
