@@ -18,7 +18,7 @@ class Segreg(object):
 
     def readAttributesFile(self, filePath):
         """
-        This function reads the csv file and populate the class attributes. Data has to be exactly in the
+        This function reads the csv file and populate the class's attributes. Data has to be exactly in the
         following format or results will be wrong:
         area id,  x_coord, y_coord , sum, attribute 1, attributes 2, attributes 3, attribute n...
         :param filePath: path with file to be read
@@ -37,10 +37,10 @@ class Segreg(object):
 
     def readCostMatrix(self, filePath):
         """
-        This function is used in case a cost matrix was already computed outside. It allows
-        import of a local file to be represented as a distance matrix.
+        This function is used in case a cost matrix was already computed. It allows
+        the import of a local file to be represented as a distance matrix.
         :param filePath: path with file to be read
-        :return: distance matrix [n,n]
+        :return: distance matrix with shape [n,n]
         """
         self.costMatrix = np.matrix(pd.read_csv(filePath, header=None))
         # n = self.costMatrix.shape[1]
@@ -53,10 +53,10 @@ class Segreg(object):
 
     def cal_localityMatrix(self, bandwidth=5000, weightmethod=1):  # n_pnt=1000 param not being used
         """
-        This function calculate the local population intensity for groups.
-        :param bandwidth: bandwidth for neighbors in meters
+        This function calculate the local population intensity for all groups.
+        :param bandwidth: bandwidth for neighborhood in meters
         :param weightmethod: 1 for gaussian, 2 for bi-square and empty for moving window
-        :return: 2d list of population intensity
+        :return: 2d array like with population intensity for all groups
         """
         n_local = self.location.shape[0]
         n_subgroup = self.pop.shape[1]
@@ -74,7 +74,7 @@ class Segreg(object):
     def cal_localDissimilarity(self):
         """
         Compute local dissimilarity
-        :return: array with results
+        :return: 1d array like with results for all groups, size of localities
         """
         if len(self.locality) == 0:
             self.locality = self.pop  # cal_localityMatrix() using default values
@@ -91,7 +91,7 @@ class Segreg(object):
     def cal_globalDissimilarity(self):
         """
         This function call local dissimilarity and compute the sum from individual values.
-        :return: global number result
+        :return: display global value
         """
         d_local = self.cal_localDissimilarity()
         return np.sum(d_local)
@@ -118,7 +118,7 @@ class Segreg(object):
     def cal_globalExposure(self):
         """
         This function call local exposure function and sum the results for the global index.
-        :return: global number result
+        :return: displays global number result
         """
         local_expo = self.cal_localExposure()
         rs = np.sum(local_expo, axis=0)
@@ -130,7 +130,7 @@ class Segreg(object):
         :param distance: distance in meters to be considered for weighting
         :param bandwidth: bandwidth in meters selected to perform neighborhood
         :param weightmethod: method to be used: 1-gussian , 2-bi square and empty-moving windows
-        :return: weight value
+        :return: weight value for internal use
         """
         distance = np.asarray(distance.T)
         #distance = distance.ravel()
@@ -151,6 +151,7 @@ class Segreg(object):
         """
         This function computes the local entropy score for a unit area Ei (diversity). A unit within the
         metropolitan area, such as a census tract.
+        :param intensity: if True it uses population intensity, otherwise uses raw data (non spatial).
         :return: 2d array with local indices
         """
         proportion = []
@@ -165,7 +166,7 @@ class Segreg(object):
     def cal_globalEntropy(self, intensity=False):
         """
         This function computes the global entropy score E (diversity). A metropolitan area’s entropy score.
-        :param intensity: if True uses population intensity, otherwise uses raw data
+        :param intensity: if True it uses population intensity, otherwise uses raw data (non spatial).
         :return: diversity score
         """
         group_score = []
@@ -186,7 +187,7 @@ class Segreg(object):
     def cal_localIndexH(self):
         """
         This function computes the local entropy index H for all localities.
-        The local_entropy (array like) with local diversity and the
+        The local_entropy (array like) local diversity and the
         global_entropy (value) diversity score are called as input.
         :return: array like with scores for n groups (size groups)
         """
@@ -200,7 +201,7 @@ class Segreg(object):
     def cal_globalIndexH(self):
         """
         Function to compute global index H returning the sum of local values.
-        h_local is called as input.
+        cal_localIndexH is called as input for sum.
         :return: value with global
         """
         h_local = self.cal_localIndexH()
