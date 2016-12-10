@@ -122,8 +122,8 @@ class Segreg(object):
         :return: displays global number result
         """
         m = self.n_group
-        local_expo = self.cal_localExposure()
-        global_exp = np.sum(local_expo, axis=0)
+        local_exp = self.cal_localExposure()
+        global_exp = np.sum(local_exp, axis=0)
         global_exp = global_exp.reshape((m, m))
         return global_exp
 
@@ -187,26 +187,32 @@ class Segreg(object):
         entropy = np.sum(group_score)
         return entropy
 
-    def cal_localIndexH(self):
+    def cal_localIndexH(self, intensity=False):
         """
         This function computes the local entropy index H for all localities.
         The local_entropy (array like) local diversity and the
         global_entropy (value) diversity score are called as input.
         :return: array like with scores for n groups (size groups)
         """
-        local_entropy = self.cal_localEntropy()
-        global_entropy = self.cal_globalEntropy()
-        et = np.asarray(global_entropy * np.sum(self.pop_sum))
-        eei = np.asarray(global_entropy - local_entropy)
-        h_local = eei * np.asarray(self.pop_sum) / et
+        local_entropy = self.cal_localEntropy(intensity=intensity)
+        global_entropy = self.cal_globalEntropy(intensity=intensity)
+        h_local = []
+        if intensity is False:
+            et = np.asarray(global_entropy * np.sum(self.pop_sum))
+            eei = np.asarray(global_entropy - local_entropy)
+            h_local = eei * np.asarray(self.pop_sum) / et
+        else:
+            et1 = np.asarray(global_entropy * np.sum(self.locality))
+            eei1 = np.asarray(global_entropy - local_entropy)
+            h_local = eei1 * np.asarray(self.locality) / et1
         return h_local
 
-    def cal_globalIndexH(self):
+    def cal_globalIndexH(self, intensity=False):
         """
         Function to compute global index H returning the sum of local values.
         cal_localIndexH is called as input for sum.
         :return: value with global
         """
-        h_local = self.cal_localIndexH()
+        h_local = self.cal_localIndexH(intensity=intensity)
         h_global = np.sum(h_local, axis=0)
         return h_global
