@@ -93,8 +93,9 @@ class Segreg(object):
         This function call local dissimilarity and compute the sum from individual values.
         :return: display global value
         """
-        d_local = self.cal_localDissimilarity()
-        return np.sum(d_local)
+        local_diss = self.cal_localDissimilarity()
+        global_diss = np.sum(local_diss)
+        return global_diss
 
     def cal_localExposure(self):
         """
@@ -120,9 +121,11 @@ class Segreg(object):
         This function call local exposure function and sum the results for the global index.
         :return: displays global number result
         """
+        m = self.n_group
         local_expo = self.cal_localExposure()
-        rs = np.sum(local_expo, axis=0)
-        return rs
+        global_exp = np.sum(local_expo, axis=0)
+        global_exp = global_exp.reshape((m, m))
+        return global_exp
 
     def getWeight(self, distance, bandwidth, weightmethod=1):
         """
