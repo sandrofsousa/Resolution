@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from numpy import float
 from scipy.spatial.distance import cdist
-np.set_printoptions(threshold=np.inf)
+# np.set_printoptions(threshold=np.inf)
 
 
 class Segreg(object):
@@ -216,3 +216,5 @@ class Segreg(object):
         h_local = self.cal_localIndexH(intensity=intensity)
         h_global = np.sum(h_local, axis=0)
         return h_global
+
+    # TODO create function to save results to local file
