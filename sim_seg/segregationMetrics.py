@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 from numpy import float
 from scipy.spatial.distance import cdist
-# np.set_printoptions(threshold=np.inf)
 
 
 class Segreg(object):
@@ -202,9 +201,9 @@ class Segreg(object):
             eei = np.asarray(global_entropy - local_entropy)
             h_local = eei * np.asarray(self.pop_sum) / et
         else:
-            et1 = np.asarray(global_entropy * np.sum(self.locality))
-            eei1 = np.asarray(global_entropy - local_entropy)
-            h_local = eei1 * np.asarray(self.locality) / et1
+            etn = np.asarray(global_entropy * np.sum(self.locality))
+            eein = np.asarray(global_entropy - local_entropy)
+            h_local = eein * np.asarray(self.locality) / etn
         return h_local
 
     def cal_globalIndexH(self, intensity=False):
