@@ -149,7 +149,7 @@ class Segreg(object):
        # weight = weight/sum(weight)
         return weight
 
-    def cal_localEntropy(self, intensity=False):
+    def cal_localEntropy(self):
         """
         This function computes the local entropy score for a unit area Ei (diversity). A unit within the
         metropolitan area, such as a census tract.
@@ -157,7 +157,7 @@ class Segreg(object):
         :return: 2d array with local indices
         """
         proportion = []
-        if intensity is False:
+        if len(self.locality) == 0:
             proportion = np.asarray(self.pop / self.pop_sum)
         else:
             proportion = np.asarray(self.locality / np.sum(self.locality))
@@ -217,6 +217,5 @@ class Segreg(object):
         return h_global
 
     # TODO create function to save results to local file
-    # TODO remove sum from input file
     # TODO add function to write entropy results
     # TODO redo functions to use lenght of locality for spatial/non spatial
