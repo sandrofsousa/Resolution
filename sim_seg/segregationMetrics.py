@@ -165,7 +165,7 @@ class Segreg(object):
         entropy = np.nan_to_num(entropy)
         return entropy
 
-    def cal_globalEntropy(self, intensity=False):
+    def cal_globalEntropy(self):
         """
         This function computes the global entropy score E (diversity). A metropolitan area’s entropy score.
         :param intensity: if True it uses population intensity, otherwise uses raw data (non spatial).
@@ -174,7 +174,7 @@ class Segreg(object):
         group_score = []
         pop_total = []
         prop = []
-        if intensity is False:
+        if len(self.locality) == 0:
             pop_total = np.sum(self.pop_sum)
             prop = np.asarray(np.sum(self.pop, axis=0))[0]
         else:
