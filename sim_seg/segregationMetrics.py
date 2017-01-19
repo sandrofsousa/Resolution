@@ -206,13 +206,13 @@ class Segreg(object):
             h_local = eein * np.asarray(self.locality) / etn
         return h_local
 
-    def cal_globalIndexH(self, intensity=False):
+    def cal_globalIndexH(self):
         """
         Function to compute global index H returning the sum of local values.
         cal_localIndexH is called as input for sum.
         :return: value with global
         """
-        h_local = self.cal_localIndexH(intensity=intensity)
+        h_local = self.cal_localIndexH()
         h_global = np.sum(h_local, axis=0)
         return h_global
 
