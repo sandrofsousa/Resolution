@@ -27,9 +27,9 @@ class Segreg(object):
         n = self.attributeMatrix.shape[1]
         self.location = self.attributeMatrix[:, 1:3]
         self.location = self.location.astype('float')
-        self.pop = self.attributeMatrix[:, 4:n].astype('int')
+        self.pop = self.attributeMatrix[:, 3:n].astype('int')
         self.pop[np.where(self.pop < 0)[0], np.where(self.pop < 0)[1]] = 0
-        self.n_group = n-4
+        self.n_group = n-3
         self.n_location = self.attributeMatrix.shape[0]
         self.pop_sum = np.sum(self.pop, axis=1)
         return self.attributeMatrix
@@ -217,3 +217,6 @@ class Segreg(object):
         return h_global
 
     # TODO create function to save results to local file
+    # TODO remove sum from input file
+    # TODO add function to write entropy results
+    # TODO redo functions to use lenght of locality for spatial/non spatial
