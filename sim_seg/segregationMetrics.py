@@ -186,17 +186,17 @@ class Segreg(object):
         entropy = np.sum(group_score)
         return entropy
 
-    def cal_localIndexH(self, intensity=False):
+    def cal_localIndexH(self):
         """
         This function computes the local entropy index H for all localities.
         The local_entropy (array like) local diversity and the
         global_entropy (value) diversity score are called as input.
         :return: array like with scores for n groups (size groups)
         """
-        local_entropy = self.cal_localEntropy(intensity=intensity)
-        global_entropy = self.cal_globalEntropy(intensity=intensity)
+        local_entropy = self.cal_localEntropy()
+        global_entropy = self.cal_globalEntropy()
         h_local = []
-        if intensity is False:
+        if len(self.locality) == 0:
             et = np.asarray(global_entropy * np.sum(self.pop_sum))
             eei = np.asarray(global_entropy - local_entropy)
             h_local = eei * np.asarray(self.pop_sum) / et
