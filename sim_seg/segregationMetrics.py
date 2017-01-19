@@ -75,16 +75,23 @@ class Segreg(object):
         Compute local dissimilarity
         :return: 1d array like with results for all groups, size of localities
         """
+        D_local = []
         if len(self.locality) == 0:
-            self.locality = self.pop  # cal_localityMatrix() using default values
-        lj = np.asarray(np.sum(self.locality, axis=1))
-        tjm = self.locality * 1.0 / lj[:, None]
-        tm = np.sum(self.pop, axis=0) * 1.0 / np.sum(self.pop)
-        I = np.sum(np.asarray(tm) * np.asarray(1 - tm))
-        sum_pop = np.sum(self.pop, axis=1)
-        N = np.sum(self.pop)
-        D_local = np.sum(1.0 * np.array(np.fabs(tjm - tm)) * np.asarray(sum_pop).ravel()[:, None] / (2 * N * I), axis=1)
-        #np.savetxt("res/d_local.csv",D_local, delimiter=",")
+            lj = np.ravel(self.pop_sum)
+            tjm = np.asarray(self.pop) * 1.0 / lj[:, None]
+            tm = np.sum(self.pop, axis=0) * 1.0 / np.sum(self.pop)
+            I = np.sum(np.asarray(tm) * np.asarray(1 - tm))
+            N = np.sum(self.pop)
+            D_local = np.sum(1.0 * np.array(np.fabs(tjm - tm)) * np.asarray(self.pop_sum).ravel()[:, None] /
+                             (2 * N * I), axis=1)
+        else:
+            lj = np.asarray(np.sum(self.locality, axis=1))
+            tjm = self.locality * 1.0 / lj[:, None]
+            tm = np.sum(self.pop, axis=0) * 1.0 / np.sum(self.pop)
+            I = np.sum(np.asarray(tm) * np.asarray(1 - tm))
+            N = np.sum(self.pop)
+            D_local = np.sum(1.0 * np.array(np.fabs(tjm - tm)) * np.asarray(self.pop_sum).ravel()[:, None] /
+                             (2 * N * I), axis=1)
         return D_local
 
     def cal_globalDissimilarity(self):
