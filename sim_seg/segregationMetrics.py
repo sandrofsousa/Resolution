@@ -18,7 +18,7 @@ class Segreg(object):
         """
         This function reads the csv file and populate the class's attributes. Data has to be exactly in the
         following format or results will be wrong:
-        area id,  x_coord, y_coord , sum, attribute 1, attributes 2, attributes 3, attribute n...
+        area id,  x_coord, y_coord, attribute 1, attributes 2, attributes 3, attribute n...
         :param filePath: path with file to be read
         :return: attribute Matrix [n,n]
         """
@@ -71,7 +71,7 @@ class Segreg(object):
 
     def cal_localDissimilarity(self):
         """
-        Compute local dissimilarity
+        Compute local dissimilarity for all groups.
         :return: 1d array like with results for all groups, size of localities
         """
         if len(self.locality) == 0:
@@ -103,8 +103,8 @@ class Segreg(object):
 
     def cal_localExposure(self):
         """
-        This function computes the local spatial exposure index of group m to group n.
-        in situations where m=n, then the result is the isolation index
+        This function computes the local exposure index of group m to group n.
+        in situations where m=n, then the result is the isolation index.
         :return: 2d list with individual indexes
         """
         m = self.n_group
@@ -161,8 +161,8 @@ class Segreg(object):
     def cal_localEntropy(self):
         """
         This function computes the local entropy score for a unit area Ei (diversity). A unit within the
-        metropolitan area, such as a census tract.
-        :param intensity: if True it uses population intensity, otherwise uses raw data (non spatial).
+        metropolitan area, such as a census tract. If population intensity was previously computed,
+        the spatial version will be returned, else the non spatial version will be selected (raw data).
         :return: 2d array with local indices
         """
         if len(self.locality) == 0:
@@ -176,7 +176,6 @@ class Segreg(object):
     def cal_globalEntropy(self):
         """
         This function computes the global entropy score E (diversity). A metropolitan area’s entropy score.
-        :param intensity: if True it uses population intensity, otherwise uses raw data (non spatial).
         :return: diversity score
         """
         group_score = []
@@ -194,9 +193,10 @@ class Segreg(object):
 
     def cal_localIndexH(self):
         """
-        This function computes the local entropy index H for all localities.
-        The local_entropy (array like) local diversity and the
-        global_entropy (value) diversity score are called as input.
+        This function computes the local entropy index H for all localities. The functions cal_localEntropy() for
+        local diversity and cal_globalEntropy for global entropy are called as input. If population intensity
+        was previously computed, the spatial version will be returned, else the non spatial version will be
+        selected (raw data).
         :return: array like with scores for n groups (size groups)
         """
         local_entropy = self.cal_localEntropy()
@@ -213,13 +213,22 @@ class Segreg(object):
 
     def cal_globalIndexH(self):
         """
-        Function to compute global index H returning the sum of local values.
-        cal_localIndexH is called as input for sum.
-        :return: value with global
+        Function to compute global index H returning the sum of local values. The function cal_localIndexH is
+        called as input for sum of individual values.
+        :return: values with global index for each group.
         """
         h_local = self.cal_localIndexH()
         h_global = np.sum(h_local, axis=0)
         return h_global
 
-    # TODO create function to save results to local file
-    # TODO add function to write entropy results
+# TODO create function to save results to local file
+# TODO add function to write entropy results
+# TODO set fisrt colunm as string on matrix during csv import readAttributesFile
+
+# Updates
+# - Sum column is not required anymore
+# - Non spatial version implemented for all measures
+# - Entropy and Index H measures implemented
+# - Dynamic change from spatial/non spatial based on intensity calculation
+# - Functions full documented
+# -
