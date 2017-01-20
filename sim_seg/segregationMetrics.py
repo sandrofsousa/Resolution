@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from numpy import float
 from scipy.spatial.distance import cdist
 
@@ -23,7 +22,8 @@ class Segreg(object):
         :param filePath: path with file to be read
         :return: attribute Matrix [n,n]
         """
-        self.attributeMatrix = np.asmatrix(pd.read_csv(filePath))
+        # self.attributeMatrix = np.asmatrix(pd.read_csv(filePath))
+        self.attributeMatrix = np.asmatrix(np.genfromtxt(filePath, skip_header=1, delimiter=","))
         n = self.attributeMatrix.shape[1]
         self.location = self.attributeMatrix[:, 1:3]
         self.location = self.location.astype('float')
@@ -41,7 +41,7 @@ class Segreg(object):
         :param filePath: path with file to be read
         :return: distance matrix with shape [n,n]
         """
-        self.costMatrix = np.matrix(pd.read_csv(filePath, header=None))
+        self.attributeMatrix = np.asmatrix(np.genfromtxt(filePath, skip_header=1, delimiter=","))
         # n = self.costMatrix.shape[1]
         # self.costMatrix = self.costMatrix[:,1:n]
         self.costMatrix = self.costMatrix.astype(np.float)
@@ -50,7 +50,7 @@ class Segreg(object):
         self.costMatrix = self.costMatrix
         return self.costMatrix
 
-    def cal_localityMatrix(self, bandwidth=5000, weightmethod=1):  # n_pnt=1000 param not being used
+    def cal_localityMatrix(self, bandwidth=5000, weightmethod=1):
         """
         This function calculate the local population intensity for all groups.
         :param bandwidth: bandwidth for neighborhood in meters
@@ -64,7 +64,6 @@ class Segreg(object):
             for index_sub in range(0, n_subgroup):
                 cost = cdist(self.location[index, :], self.location)
                 weight = self.getWeight(cost, bandwidth, weightmethod)
-                #weight = self.getWeight(self.costMatrix[index,:].T,bandwidth,weightmethod)
                 locality_temp[index, index_sub] = np.sum(weight * np.asarray(self.pop[:, index_sub]))/np.sum(weight)
         self.locality = locality_temp
         self.locality[np.where(self.locality < 0)[0], np.where(self.locality < 0)[1]] = 0
@@ -75,24 +74,23 @@ class Segreg(object):
         Compute local dissimilarity
         :return: 1d array like with results for all groups, size of localities
         """
-        D_local = []
         if len(self.locality) == 0:
             lj = np.ravel(self.pop_sum)
             tjm = np.asarray(self.pop) * 1.0 / lj[:, None]
             tm = np.sum(self.pop, axis=0) * 1.0 / np.sum(self.pop)
-            I = np.sum(np.asarray(tm) * np.asarray(1 - tm))
-            N = np.sum(self.pop)
-            D_local = np.sum(1.0 * np.array(np.fabs(tjm - tm)) * np.asarray(self.pop_sum).ravel()[:, None] /
-                             (2 * N * I), axis=1)
+            index_i = np.sum(np.asarray(tm) * np.asarray(1 - tm))
+            pop_total = np.sum(self.pop)
+            local_diss = np.sum(1.0 * np.array(np.fabs(tjm - tm)) *
+                                np.asarray(self.pop_sum).ravel()[:, None] / (2 * pop_total * index_i), axis=1)
         else:
             lj = np.asarray(np.sum(self.locality, axis=1))
             tjm = self.locality * 1.0 / lj[:, None]
             tm = np.sum(self.pop, axis=0) * 1.0 / np.sum(self.pop)
-            I = np.sum(np.asarray(tm) * np.asarray(1 - tm))
-            N = np.sum(self.pop)
-            D_local = np.sum(1.0 * np.array(np.fabs(tjm - tm)) * np.asarray(self.pop_sum).ravel()[:, None] /
-                             (2 * N * I), axis=1)
-        return D_local
+            index_i = np.sum(np.asarray(tm) * np.asarray(1 - tm))
+            pop_total = np.sum(self.pop)
+            local_diss = np.sum(1.0 * np.array(np.fabs(tjm - tm)) *
+                                np.asarray(self.pop_sum).ravel()[:, None] / (2 * pop_total * index_i), axis=1)
+        return local_diss
 
     def cal_globalDissimilarity(self):
         """
@@ -112,19 +110,18 @@ class Segreg(object):
         m = self.n_group
         j = self.n_location
         exposure_rs = np.zeros((j, (m * m)))
-
         if len(self.locality) == 0:
-            localExpo = np.asarray(self.pop) * 1.0 / np.asarray(np.sum(self.pop, axis=0)).ravel()
-            localityRate = np.asarray(self.pop) * 1.0 / np.asarray(np.sum(self.pop, axis=1)).ravel()[:, None]
+            local_expo = np.asarray(self.pop) * 1.0 / np.asarray(np.sum(self.pop, axis=0)).ravel()
+            locality_rate = np.asarray(self.pop) * 1.0 / np.asarray(np.sum(self.pop, axis=1)).ravel()[:, None]
             for i in range(m):
-                exposure_rs[:, ((i * m) + 0):((i * m) + m)] = np.asarray(localityRate) * \
-                                                              np.asarray(localExpo[:, i]).ravel()[:, None]
+                exposure_rs[:, ((i * m) + 0):((i * m) + m)] = np.asarray(locality_rate) * \
+                                                              np.asarray(local_expo[:, i]).ravel()[:, None]
         else:
-            localExpo = np.asarray(self.pop) * 1.0 / np.asarray(np.sum(self.pop, axis=0)).ravel()
-            localityRate = np.asarray(self.locality) * 1.0 / np.asarray(np.sum(self.locality, axis=1)).ravel()[:, None]
+            local_expo = np.asarray(self.pop) * 1.0 / np.asarray(np.sum(self.pop, axis=0)).ravel()
+            locality_rate = np.asarray(self.locality) * 1.0 / np.asarray(np.sum(self.locality, axis=1)).ravel()[:, None]
             for i in range(m):
-                exposure_rs[:, ((i * m) + 0):((i * m) + m)] = np.asarray(localityRate) * \
-                                                              np.asarray(localExpo[:, i]).ravel()[:, None]
+                exposure_rs[:, ((i * m) + 0):((i * m) + m)] = np.asarray(locality_rate) * \
+                                                              np.asarray(local_expo[:, i]).ravel()[:, None]
         exposure_rs[np.isinf(exposure_rs)] = 0
         exposure_rs[np.isnan(exposure_rs)] = 0
         return exposure_rs
@@ -149,7 +146,6 @@ class Segreg(object):
         :return: weight value for internal use
         """
         distance = np.asarray(distance.T)
-        #distance = distance.ravel()
         if weightmethod == 1:
             weight = np.exp((-0.5) * (distance/bandwidth) * (distance/bandwidth))
         elif weightmethod == 2:
@@ -160,7 +156,6 @@ class Segreg(object):
             weight = 1
             sel = np.where(distance > bandwidth)
             weight[sel[0], :] = 0
-       # weight = weight/sum(weight)
         return weight
 
     def cal_localEntropy(self):
@@ -170,7 +165,6 @@ class Segreg(object):
         :param intensity: if True it uses population intensity, otherwise uses raw data (non spatial).
         :return: 2d array with local indices
         """
-        proportion = []
         if len(self.locality) == 0:
             proportion = np.asarray(self.pop / self.pop_sum)
         else:
@@ -186,8 +180,6 @@ class Segreg(object):
         :return: diversity score
         """
         group_score = []
-        pop_total = []
-        prop = []
         if len(self.locality) == 0:
             pop_total = np.sum(self.pop_sum)
             prop = np.asarray(np.sum(self.pop, axis=0))[0]
@@ -209,15 +201,14 @@ class Segreg(object):
         """
         local_entropy = self.cal_localEntropy()
         global_entropy = self.cal_globalEntropy()
-        h_local = []
         if len(self.locality) == 0:
             et = np.asarray(global_entropy * np.sum(self.pop_sum))
             eei = np.asarray(global_entropy - local_entropy)
             h_local = eei * np.asarray(self.pop_sum) / et
         else:
-            etn = np.asarray(global_entropy * np.sum(self.locality))
-            eein = np.asarray(global_entropy - local_entropy)
-            h_local = eein * np.asarray(self.locality) / etn
+            et = np.asarray(global_entropy * np.sum(self.locality))
+            eei = np.asarray(global_entropy - local_entropy)
+            h_local = eei * np.asarray(self.locality) / et
         return h_local
 
     def cal_globalIndexH(self):
@@ -232,4 +223,3 @@ class Segreg(object):
 
     # TODO create function to save results to local file
     # TODO add function to write entropy results
-    # TODO redo functions to use lenght of locality for spatial/non spatial
