@@ -231,4 +231,3 @@ class Segreg(object):
 # - Entropy and Index H measures implemented
 # - Dynamic change from spatial/non spatial based on intensity calculation
 # - Functions full documented
-# -
