@@ -90,6 +90,7 @@ class Segreg(object):
             pop_total = np.sum(self.pop)
             local_diss = np.sum(1.0 * np.array(np.fabs(tjm - tm)) *
                                 np.asarray(self.pop_sum).ravel()[:, None] / (2 * pop_total * index_i), axis=1)
+        local_diss = np.nan_to_num(local_diss)
         return local_diss
 
     def cal_globalDissimilarity(self):
@@ -223,11 +224,4 @@ class Segreg(object):
 
 # TODO create function to save results to local file
 # TODO add function to write entropy results
-# TODO set fisrt colunm as string on matrix during csv import readAttributesFile
-
-# Updates
-# - Sum column is not required anymore
-# - Non spatial version implemented for all measures
-# - Entropy and Index H measures implemented
-# - Dynamic change from spatial/non spatial based on intensity calculation
-# - Functions full documented
+# TODO set first column as string on matrix during csv import readAttributesFile
