@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.spatial.distance import cdist
+import pandas as pd
 
 
 class Segreg(object):
@@ -22,7 +23,13 @@ class Segreg(object):
         :return: attribute Matrix [n,n]
         """
         # self.attributeMatrix = np.asmatrix(pd.read_csv(filePath))
-        self.attributeMatrix = np.asmatrix(np.genfromtxt(filePath, skip_header=1, delimiter=","))
+        # self.attributeMatrix = np.asmatrix(np.genfromtxt(filePath, skip_header=1, delimiter=",", filling_values=0, dtype=(str)))
+        data = np.genfromtxt(filePath, skip_header=1, delimiter=",", filling_values=0, dtype=None)
+        temp_data = []
+        for line in data:
+            line = list(line)
+            temp_data.append(line)
+        self.attributeMatrix = np.asmatrix(temp_data)
         n = self.attributeMatrix.shape[1]
         self.location = self.attributeMatrix[:, 1:3]
         self.location = self.location.astype('float')
