@@ -178,6 +178,7 @@ class Segreg(object):
             proportion = np.asarray(self.locality / np.sum(self.locality))
         entropy = proportion * np.log(1 / proportion)
         entropy = np.nan_to_num(entropy)
+        entropy = np.sum(entropy, axis=1)
         return entropy
 
     def cal_globalEntropy(self):
