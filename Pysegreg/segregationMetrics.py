@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.spatial.distance import cdist
-import pandas as pd
 
 
 class Segreg(object):
@@ -13,6 +12,7 @@ class Segreg(object):
         self.n_location = 0                     # length of list (n lines) (attributeMatrix.shape[0])
         self.n_group = 0                        # number of groups (attributeMatrix.shape[1] - 4)
         self.costMatrix = []                    # scipy cdist distance matrix
+        self.track_id = []                      # track ids at string format
 
     def readAttributesFile(self, filePath):
         """
@@ -22,20 +22,16 @@ class Segreg(object):
         :param filePath: path with file to be read
         :return: attribute Matrix [n,n]
         """
-        # self.attributeMatrix = np.asmatrix(pd.read_csv(filePath))
-        # self.attributeMatrix = np.asmatrix(np.genfromtxt(filePath, skip_header=1, delimiter=",", filling_values=0, dtype=(str)))
-        data = np.genfromtxt(filePath, skip_header=1, delimiter=",", filling_values=0, dtype=None)
-        temp_data = []
-        for line in data:
-            line = list(line)
-            temp_data.append(line)
-        self.attributeMatrix = np.asmatrix(temp_data)
+        raw_data = np.genfromtxt(filePath, skip_header=1, delimiter=",", filling_values=0, dtype=None)
+        data = [list(item)[1:] for item in raw_data]
+        self.attributeMatrix = np.asmatrix(data)
+        self.track_id = np.asarray([x[0] for x in raw_data]).astype(str)
         n = self.attributeMatrix.shape[1]
         self.location = self.attributeMatrix[:, 1:3]
         self.location = self.location.astype('float')
-        self.pop = self.attributeMatrix[:, 3:n].astype('int')
-        self.pop[np.where(self.pop < 0)[0], np.where(self.pop < 0)[1]] = 0
-        self.n_group = n-3
+        self.pop = self.attributeMatrix[:, 2:n].astype('int')
+        # self.pop[np.where(self.pop < 0)[0], np.where(self.pop < 0)[1]] = 0
+        self.n_group = n-2
         self.n_location = self.attributeMatrix.shape[0]
         self.pop_sum = np.sum(self.pop, axis=1)
         return self.attributeMatrix
@@ -176,9 +172,8 @@ class Segreg(object):
             proportion = np.asarray(self.pop / self.pop_sum)
         else:
             proportion = np.asarray(self.locality / np.sum(self.locality))
-        entropy = proportion * np.log(1 / proportion)
+        entropy = np.sum(proportion * np.log(1 / proportion), axis=1)
         entropy = np.nan_to_num(entropy)
-        entropy = np.sum(entropy, axis=1)
         return entropy
 
     def cal_globalEntropy(self):
