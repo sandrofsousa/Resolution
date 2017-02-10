@@ -25,7 +25,6 @@ class Segreg(object):
         raw_data = np.genfromtxt(filePath, skip_header=1, delimiter=",", filling_values=0, dtype=None)
         data = [list(item)[1:] for item in raw_data]
         self.attributeMatrix = np.asmatrix(data)
-        self.track_id = np.asarray([x[0] for x in raw_data]).astype(str)
         n = self.attributeMatrix.shape[1]
         self.location = self.attributeMatrix[:, 1:3]
         self.location = self.location.astype('float')
@@ -34,6 +33,8 @@ class Segreg(object):
         self.n_group = n-2
         self.n_location = self.attributeMatrix.shape[0]
         self.pop_sum = np.sum(self.pop, axis=1)
+        self.track_id = np.asarray([x[0] for x in raw_data]).astype(str)
+        self.track_id = self.track_id.reshape((self.n_location, 1))
         return self.attributeMatrix
 
     def readCostMatrix(self, filePath):
@@ -174,6 +175,7 @@ class Segreg(object):
             proportion = np.asarray(self.locality / np.sum(self.locality))
         entropy = np.sum(proportion * np.log(1 / proportion), axis=1)
         entropy = np.nan_to_num(entropy)
+        entropy = entropy.reshape((self.n_location, 1))
         return entropy
 
     def cal_globalEntropy(self):
@@ -205,15 +207,13 @@ class Segreg(object):
         local_entropy = self.cal_localEntropy()
         global_entropy = self.cal_globalEntropy()
         if len(self.locality) == 0:
-            pop_sum = np.ravel(self.pop_sum)
-            et = np.asarray(global_entropy * np.sum(pop_sum))
+            et = np.asarray(global_entropy * np.sum(self.pop_sum))
             eei = np.asarray(global_entropy - local_entropy)
-            h_local = eei * np.asarray(pop_sum) / et
+            h_local = eei * np.asarray(self.pop_sum) / et
         else:
             et = np.asarray(global_entropy * np.sum(self.locality))
             eei = np.asarray(global_entropy - local_entropy)
-            h_local = eei * np.asarray(self.locality) / et
-        h_local = h_local
+            h_local = eei * np.sum(self.locality) / et
         return h_local
 
     def cal_globalIndexH(self):
