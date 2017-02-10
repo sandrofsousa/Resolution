@@ -173,8 +173,10 @@ class Segreg(object):
             proportion = np.asarray(self.pop / self.pop_sum)
         else:
             proportion = np.asarray(self.locality / np.sum(self.locality))
-        entropy = np.sum(proportion * np.log(1 / proportion), axis=1)
-        entropy = np.nan_to_num(entropy)
+        entropy = proportion * np.log(1 / proportion)
+        entropy[np.isnan(entropy)] = 0
+        entropy[np.isinf(entropy)] = 0
+        entropy = np.sum(entropy, axis=1)
         entropy = entropy.reshape((self.n_location, 1))
         return entropy
 
