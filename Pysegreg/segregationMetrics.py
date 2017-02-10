@@ -26,7 +26,7 @@ class Segreg(object):
         data = [list(item)[1:] for item in raw_data]
         self.attributeMatrix = np.asmatrix(data)
         n = self.attributeMatrix.shape[1]
-        self.location = self.attributeMatrix[:, 1:3]
+        self.location = self.attributeMatrix[:, 0:2]
         self.location = self.location.astype('float')
         self.pop = self.attributeMatrix[:, 2:n].astype('int')
         # self.pop[np.where(self.pop < 0)[0], np.where(self.pop < 0)[1]] = 0
