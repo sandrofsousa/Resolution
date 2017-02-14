@@ -156,10 +156,12 @@ class Segreg(object):
             weight = (1 - (distance/bandwidth)*(distance/bandwidth)) * (1 - (distance/bandwidth)*(distance/bandwidth))
             sel = np.where(distance > bandwidth)
             weight[sel[0]] = 0
-        else:
+        elif weightmethod == 3:
             weight = 1
             sel = np.where(distance > bandwidth)
             weight[sel[0], :] = 0
+        else:
+            raise Exception('Invalid weight method selected!')
         return weight
 
     def cal_localEntropy(self):
@@ -228,6 +230,5 @@ class Segreg(object):
         h_global = np.sum(h_local, axis=0)
         return h_global
 
-# TODO create function to save results to local file
-# TODO add function to write entropy results
-# TODO set first column as string on matrix during csv import readAttributesFile
+# TODO create function to save results to local file, transpose from jupyter to python class
+# TODO weight method 3 with a bug - weight[sel[0], :] = 0 TypeError: 'int' object does not support item assignment
