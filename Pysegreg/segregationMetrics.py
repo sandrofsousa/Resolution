@@ -147,7 +147,7 @@ class Segreg(object):
         :param distance: distance in meters to be considered for weighting
         :param bandwidth: bandwidth in meters selected to perform neighborhood
         :param weightmethod: method to be used: 1-gussian , 2-bi square and empty-moving windows
-        :return: weight value for internal use
+        :return: weight array for internal use
         """
         distance = np.asarray(distance.T)
         if weightmethod == 1:
@@ -157,9 +157,9 @@ class Segreg(object):
             sel = np.where(distance > bandwidth)
             weight[sel[0]] = 0
         elif weightmethod == 3:
-            weight = 1
+            weight = (1 + (distance * 0))
             sel = np.where(distance > bandwidth)
-            weight[sel[0], :] = 0
+            weight[sel[0]] = 0
         else:
             raise Exception('Invalid weight method selected!')
         return weight
