@@ -174,7 +174,7 @@ class Segreg(object):
         if len(self.locality) == 0:
             proportion = np.asarray(self.pop / self.pop_sum)
         else:
-            proportion = np.asarray(self.locality / np.sum(self.locality))
+            proportion = np.asarray(self.locality / self.pop_sum)   # changed to use pop sum
         entropy = proportion * np.log(1 / proportion)
         entropy[np.isnan(entropy)] = 0
         entropy[np.isinf(entropy)] = 0
@@ -192,7 +192,7 @@ class Segreg(object):
             pop_total = np.sum(self.pop_sum)
             prop = np.asarray(np.sum(self.pop, axis=0))[0]
         else:
-            pop_total = np.sum(self.locality)
+            pop_total = np.sum(self.pop_sum)  # changed to use pop sum
             prop = np.asarray(np.sum(self.locality, axis=0))
         for group in prop:
             group_idx = group / pop_total * np.log(1 / (group / pop_total))
