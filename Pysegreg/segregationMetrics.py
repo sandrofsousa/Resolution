@@ -231,4 +231,3 @@ class Segreg(object):
         return h_global
 
 # TODO create function to save results to local file, transpose from jupyter to python class
-# TODO weight method 3 with a bug - weight[sel[0], :] = 0 TypeError: 'int' object does not support item assignment
