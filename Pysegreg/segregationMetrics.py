@@ -211,13 +211,13 @@ class Segreg(object):
         local_entropy = self.cal_localEntropy()
         global_entropy = self.cal_globalEntropy()
         if len(self.locality) == 0:
-            et = np.asarray(global_entropy * np.sum(self.pop_sum))
+            et = global_entropy * np.sum(self.pop_sum)
             eei = np.asarray(global_entropy - local_entropy)
-            h_local = eei * np.asarray(self.pop_sum) / et
+            h_local = np.asarray(self.pop_sum) * eei / et
         else:
-            et = np.asarray(global_entropy * np.sum(self.locality))
+            et = global_entropy * np.sum(self.pop_sum)
             eei = np.asarray(global_entropy - local_entropy)
-            h_local = eei * np.sum(self.locality) / et
+            h_local = np.asarray(self.pop_sum) * eei / et
         return h_local
 
     def cal_globalIndexH(self):
