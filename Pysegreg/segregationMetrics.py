@@ -5,24 +5,24 @@ from scipy.spatial.distance import cdist
 class Segreg(object):
     def __init__(self):
         self.attributeMatrix = np.matrix([])    # attributes matrix full size - all columns
-        self.location = []                      # x and y coordinates from file (2D lists)
-        self.pop = []                           # groups to be analysed [:,4:n] (2D lists)
-        self.pop_sum = []                       # sum of population groups from pop (1d array)
-        self.locality = []                      # local population intensity for groups
+        self.location = []                      # x and y coordinates from tract centroid (2D lists)
+        self.pop = []                           # population of each groups by tract (2D lists)
+        self.pop_sum = []                       # total population of the tract (sum all groups)
+        self.locality = []                      # population intensity by groups by tract
         self.n_location = 0                     # length of list (n lines) (attributeMatrix.shape[0])
         self.n_group = 0                        # number of groups (attributeMatrix.shape[1] - 4)
         self.costMatrix = []                    # scipy cdist distance matrix
-        self.track_id = []                      # track ids at string format
+        self.tract_id = []                      # tract ids in string format
 
-    def readAttributesFile(self, filePath):
+    def readAttributesFile(self, filepath):
         """
         This function reads the csv file and populate the class's attributes. Data has to be exactly in the
         following format or results will be wrong:
         area id,  x_coord, y_coord, attribute 1, attributes 2, attributes 3, attribute n...
-        :param filePath: path with file to be read
+        :param filepath: path with file to be read
         :return: attribute Matrix [n,n]
         """
-        raw_data = np.genfromtxt(filePath, skip_header=1, delimiter=",", filling_values=0, dtype=None)
+        raw_data = np.genfromtxt(filepath, skip_header=1, delimiter=",", filling_values=0, dtype=None)
         data = [list(item)[1:] for item in raw_data]
         self.attributeMatrix = np.asmatrix(data)
         n = self.attributeMatrix.shape[1]
@@ -33,25 +33,52 @@ class Segreg(object):
         self.n_group = n-2
         self.n_location = self.attributeMatrix.shape[0]
         self.pop_sum = np.sum(self.pop, axis=1)
-        self.track_id = np.asarray([x[0] for x in raw_data]).astype(str)
-        self.track_id = self.track_id.reshape((self.n_location, 1))
+        self.tract_id = np.asarray([x[0] for x in raw_data]).astype(str)
+        self.tract_id = self.tract_id.reshape((self.n_location, 1))
         return self.attributeMatrix
 
-    def readCostMatrix(self, filePath):
+    def getWeight(self, distance, bandwidth, weightmethod=1):
         """
-        This function is used in case a cost matrix was already computed. It allows
-        the import of a local file to be represented as a distance matrix.
-        :param filePath: path with file to be read
-        :return: distance matrix with shape [n,n]
+        This function computes the weights for neighborhood. Default value is Gaussian(1)
+        :param distance: distance in meters to be considered for weighting
+        :param bandwidth: bandwidth in meters selected to perform neighborhood
+        :param weightmethod: method to be used: 1-gussian , 2-bi square and empty-moving windows
+        :return: weight array for internal use
         """
-        self.attributeMatrix = np.asmatrix(np.genfromtxt(filePath, skip_header=1, delimiter=","))
-        # n = self.costMatrix.shape[1]
-        # self.costMatrix = self.costMatrix[:,1:n]
-        self.costMatrix = self.costMatrix.astype(np.float)
-        self.costMatrix[np.isinf(self.costMatrix)] = 0
-        self.costMatrix = np.nan_to_num(self.costMatrix)
-        self.costMatrix = self.costMatrix
-        return self.costMatrix
+        distance = np.asarray(distance.T)
+        if weightmethod == 1:
+            weight = np.exp((-0.5) * (distance/bandwidth) * (distance/bandwidth))
+        elif weightmethod == 2:
+            weight = (1 - (distance/bandwidth)*(distance/bandwidth)) * (1 - (distance/bandwidth)*(distance/bandwidth))
+            sel = np.where(distance > bandwidth)
+            weight[sel[0]] = 0
+        elif weightmethod == 3:
+            weight = (1 + (distance * 0))
+            sel = np.where(distance > bandwidth)
+            weight[sel[0]] = 0
+        else:
+            raise Exception('Invalid weight method selected!')
+        return weight
+
+    def cal_timeMatrix(self, bandwidth, weightmethod, matrix):
+        """
+        This function calculate the local population intensity for all groups.
+        :param bandwidth: bandwidth for neighborhood in meters
+        :param weightmethod: 1 for gaussian, 2 for bi-square and empty for moving window
+        :param filename: path/file for input time matrix
+        :return: 2d array like with population intensity for all groups
+        """
+        n_local = self.location.shape[0]
+        n_subgroup = self.pop.shape[1]
+        locality_temp = np.empty([n_local, n_subgroup])
+        for index in range(0, n_local):
+            for index_sub in range(0, n_subgroup):
+                cost = matrix[index, :].reshape(1, n_local)
+                weight = self.getWeight(cost, bandwidth, weightmethod)
+                locality_temp[index, index_sub] = np.sum(weight * np.asarray(self.pop[:, index_sub])) / np.sum(weight)
+        self.locality = locality_temp
+        self.locality[np.where(self.locality < 0)[0], np.where(self.locality < 0)[1]] = 0
+        return locality_temp
 
     def cal_localityMatrix(self, bandwidth=5000, weightmethod=1):
         """
@@ -141,29 +168,6 @@ class Segreg(object):
         global_exp = global_exp.reshape((m, m))
         return global_exp
 
-    def getWeight(self, distance, bandwidth, weightmethod=1):
-        """
-        This function computes the weights for neighborhood. Default value is Gaussian(1)
-        :param distance: distance in meters to be considered for weighting
-        :param bandwidth: bandwidth in meters selected to perform neighborhood
-        :param weightmethod: method to be used: 1-gussian , 2-bi square and empty-moving windows
-        :return: weight array for internal use
-        """
-        distance = np.asarray(distance.T)
-        if weightmethod == 1:
-            weight = np.exp((-0.5) * (distance/bandwidth) * (distance/bandwidth))
-        elif weightmethod == 2:
-            weight = (1 - (distance/bandwidth)*(distance/bandwidth)) * (1 - (distance/bandwidth)*(distance/bandwidth))
-            sel = np.where(distance > bandwidth)
-            weight[sel[0]] = 0
-        elif weightmethod == 3:
-            weight = (1 + (distance * 0))
-            sel = np.where(distance > bandwidth)
-            weight[sel[0]] = 0
-        else:
-            raise Exception('Invalid weight method selected!')
-        return weight
-
     def cal_localEntropy(self):
         """
         This function computes the local entropy score for a unit area Ei (diversity). A unit within the
@@ -188,11 +192,11 @@ class Segreg(object):
         :return: diversity score
         """
         group_score = []
+        pop_total = np.sum(self.pop_sum)
+
         if len(self.locality) == 0:
-            pop_total = np.sum(self.pop_sum)
             prop = np.asarray(np.sum(self.pop, axis=0))[0]
         else:
-            pop_total = np.sum(self.pop_sum)  # changed to use pop sum
             prop = np.asarray(np.sum(self.locality, axis=0))
         for group in prop:
             group_idx = group / pop_total * np.log(1 / (group / pop_total))
@@ -215,7 +219,7 @@ class Segreg(object):
             eei = np.asarray(global_entropy - local_entropy)
             h_local = np.asarray(self.pop_sum) * eei / et
         else:
-            et = global_entropy * np.sum(self.pop_sum)
+            et = global_entropy * np.sum(self.locality)
             eei = np.asarray(global_entropy - local_entropy)
             h_local = np.asarray(self.pop_sum) * eei / et
         return h_local
