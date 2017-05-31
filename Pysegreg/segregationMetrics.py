@@ -24,6 +24,7 @@ class Segreg(object):
         """
         raw_data = np.genfromtxt(filepath, skip_header=1, delimiter=",", filling_values=0, dtype=None)
         data = [list(item)[1:] for item in raw_data]
+
         self.attributeMatrix = np.asmatrix(data)
         n = self.attributeMatrix.shape[1]
         self.location = self.attributeMatrix[:, 0:2]
@@ -35,6 +36,7 @@ class Segreg(object):
         self.pop_sum = np.sum(self.pop, axis=1)
         self.tract_id = np.asarray([x[0] for x in raw_data]).astype(str)
         self.tract_id = self.tract_id.reshape((self.n_location, 1))
+
         return self.attributeMatrix
 
     def getWeight(self, distance, bandwidth, weightmethod=1):
@@ -46,18 +48,23 @@ class Segreg(object):
         :return: weight array for internal use
         """
         distance = np.asarray(distance.T)
+
         if weightmethod == 1:
             weight = np.exp((-0.5) * (distance/bandwidth) * (distance/bandwidth))
+
         elif weightmethod == 2:
             weight = (1 - (distance/bandwidth)*(distance/bandwidth)) * (1 - (distance/bandwidth)*(distance/bandwidth))
             sel = np.where(distance > bandwidth)
             weight[sel[0]] = 0
+
         elif weightmethod == 3:
             weight = (1 + (distance * 0))
             sel = np.where(distance > bandwidth)
             weight[sel[0]] = 0
+
         else:
             raise Exception('Invalid weight method selected!')
+
         return weight
 
     def cal_timeMatrix(self, bandwidth, weightmethod, matrix):
@@ -71,13 +78,16 @@ class Segreg(object):
         n_local = self.location.shape[0]
         n_subgroup = self.pop.shape[1]
         locality_temp = np.empty([n_local, n_subgroup])
+
         for index in range(0, n_local):
             for index_sub in range(0, n_subgroup):
                 cost = matrix[index, :].reshape(1, n_local)
                 weight = self.getWeight(cost, bandwidth, weightmethod)
                 locality_temp[index, index_sub] = np.sum(weight * np.asarray(self.pop[:, index_sub])) / np.sum(weight)
+
         self.locality = locality_temp
         self.locality[np.where(self.locality < 0)[0], np.where(self.locality < 0)[1]] = 0
+
         return locality_temp
 
     def cal_localityMatrix(self, bandwidth=5000, weightmethod=1):
@@ -90,13 +100,16 @@ class Segreg(object):
         n_local = self.location.shape[0]
         n_subgroup = self.pop.shape[1]
         locality_temp = np.empty([n_local, n_subgroup])
+
         for index in range(0, n_local):
             for index_sub in range(0, n_subgroup):
                 cost = cdist(self.location[index, :], self.location)
                 weight = self.getWeight(cost, bandwidth, weightmethod)
                 locality_temp[index, index_sub] = np.sum(weight * np.asarray(self.pop[:, index_sub]))/np.sum(weight)
+
         self.locality = locality_temp
         self.locality[np.where(self.locality < 0)[0], np.where(self.locality < 0)[1]] = 0
+
         return locality_temp
 
     def cal_localDissimilarity(self):
@@ -112,6 +125,7 @@ class Segreg(object):
             pop_total = np.sum(self.pop)
             local_diss = np.sum(1.0 * np.array(np.fabs(tjm - tm)) *
                                 np.asarray(self.pop_sum).ravel()[:, None] / (2 * pop_total * index_i), axis=1)
+
         else:
             lj = np.asarray(np.sum(self.locality, axis=1))
             tjm = self.locality * 1.0 / lj[:, None]
@@ -120,7 +134,9 @@ class Segreg(object):
             pop_total = np.sum(self.pop)
             local_diss = np.sum(1.0 * np.array(np.fabs(tjm - tm)) *
                                 np.asarray(self.pop_sum).ravel()[:, None] / (2 * pop_total * index_i), axis=1)
+
         local_diss = np.nan_to_num(local_diss)
+
         return local_diss
 
     def cal_globalDissimilarity(self):
@@ -130,6 +146,7 @@ class Segreg(object):
         """
         local_diss = self.cal_localDissimilarity()
         global_diss = np.sum(local_diss)
+
         return global_diss
 
     def cal_localExposure(self):
@@ -141,20 +158,24 @@ class Segreg(object):
         m = self.n_group
         j = self.n_location
         exposure_rs = np.zeros((j, (m * m)))
+
         if len(self.locality) == 0:
             local_expo = np.asarray(self.pop) * 1.0 / np.asarray(np.sum(self.pop, axis=0)).ravel()
             locality_rate = np.asarray(self.pop) * 1.0 / np.asarray(np.sum(self.pop, axis=1)).ravel()[:, None]
             for i in range(m):
                 exposure_rs[:, ((i * m) + 0):((i * m) + m)] = np.asarray(locality_rate) * \
                                                               np.asarray(local_expo[:, i]).ravel()[:, None]
+
         else:
             local_expo = np.asarray(self.pop) * 1.0 / np.asarray(np.sum(self.pop, axis=0)).ravel()
             locality_rate = np.asarray(self.locality) * 1.0 / np.asarray(np.sum(self.locality, axis=1)).ravel()[:, None]
             for i in range(m):
                 exposure_rs[:, ((i * m) + 0):((i * m) + m)] = np.asarray(locality_rate) * \
                                                               np.asarray(local_expo[:, i]).ravel()[:, None]
+
         exposure_rs[np.isinf(exposure_rs)] = 0
         exposure_rs[np.isnan(exposure_rs)] = 0
+
         return exposure_rs
 
     def cal_globalExposure(self):
@@ -178,6 +199,7 @@ class Segreg(object):
         """
         if len(self.locality) == 0:
             proportion = np.asarray(self.pop / self.pop_sum)
+
         else:
             proportion = np.asarray(self.locality / np.sum(self.locality, axis=1).reshape(self.n_location, 1))
 
@@ -205,19 +227,6 @@ class Segreg(object):
 
         return entropy
 
-        # group_score = []
-        # pop_total = np.sum(self.pop_sum)
-        #
-        # if len(self.locality) == 0:
-        #     prop = np.asarray(np.sum(self.pop, axis=0))[0]
-        # else:
-        #     prop = np.asarray(np.sum(self.locality, axis=0))
-        # for group in prop:
-        #     group_idx = group / pop_total * np.log(1 / (group / pop_total))
-        #     group_score.append(group_idx)
-        # entropy = np.sum(group_score)
-        # return entropy
-
     def cal_localIndexH(self):
         """
         This function computes the local entropy index H for all localities. The functions cal_localEntropy() for
@@ -226,19 +235,6 @@ class Segreg(object):
         selected (raw data).
         :return: array like with scores for n groups (size groups)
         """
-        # local_entropy = self.cal_localEntropy()
-        # global_entropy = self.cal_globalEntropy()
-        #
-        # if len(self.locality) == 0:
-        #     et = global_entropy * np.sum(self.pop_sum)
-        #     eei = np.asarray(global_entropy - local_entropy)
-        #     h_local = np.asarray(self.pop_sum) * eei / et
-        #
-        # else:
-        #     et = global_entropy * np.sum(self.pop_sum)
-        #     eei = np.asarray(global_entropy - local_entropy)
-        #     h_local = np.asarray(self.pop_sum) * eei / et
-
         local_entropy = self.cal_localEntropy()
         global_entropy = self.cal_globalEntropy()
 
