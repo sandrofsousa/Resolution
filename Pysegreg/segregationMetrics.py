@@ -166,6 +166,7 @@ class Segreg(object):
         local_exp = self.cal_localExposure()
         global_exp = np.sum(local_exp, axis=0)
         global_exp = global_exp.reshape((m, m))
+
         return global_exp
 
     def cal_localEntropy(self):
@@ -179,11 +180,13 @@ class Segreg(object):
             proportion = np.asarray(self.pop / self.pop_sum)
         else:
             proportion = np.asarray(self.locality / np.sum(self.locality, axis=1).reshape(self.n_location, 1))
+
         entropy = proportion * np.log(1 / proportion)
         entropy[np.isnan(entropy)] = 0
         entropy[np.isinf(entropy)] = 0
         entropy = np.sum(entropy, axis=1)
         entropy = entropy.reshape((self.n_location, 1))
+
         return entropy
 
     def cal_globalEntropy(self):
@@ -193,16 +196,27 @@ class Segreg(object):
         """
         group_score = []
         pop_total = np.sum(self.pop_sum)
+        prop = np.asarray(np.sum(self.pop, axis=0))[0]
 
-        if len(self.locality) == 0:
-            prop = np.asarray(np.sum(self.pop, axis=0))[0]
-        else:
-            prop = np.asarray(np.sum(self.locality, axis=0))
         for group in prop:
             group_idx = group / pop_total * np.log(1 / (group / pop_total))
             group_score.append(group_idx)
         entropy = np.sum(group_score)
+
         return entropy
+
+        # group_score = []
+        # pop_total = np.sum(self.pop_sum)
+        #
+        # if len(self.locality) == 0:
+        #     prop = np.asarray(np.sum(self.pop, axis=0))[0]
+        # else:
+        #     prop = np.asarray(np.sum(self.locality, axis=0))
+        # for group in prop:
+        #     group_idx = group / pop_total * np.log(1 / (group / pop_total))
+        #     group_score.append(group_idx)
+        # entropy = np.sum(group_score)
+        # return entropy
 
     def cal_localIndexH(self):
         """
@@ -212,16 +226,26 @@ class Segreg(object):
         selected (raw data).
         :return: array like with scores for n groups (size groups)
         """
+        # local_entropy = self.cal_localEntropy()
+        # global_entropy = self.cal_globalEntropy()
+        #
+        # if len(self.locality) == 0:
+        #     et = global_entropy * np.sum(self.pop_sum)
+        #     eei = np.asarray(global_entropy - local_entropy)
+        #     h_local = np.asarray(self.pop_sum) * eei / et
+        #
+        # else:
+        #     et = global_entropy * np.sum(self.pop_sum)
+        #     eei = np.asarray(global_entropy - local_entropy)
+        #     h_local = np.asarray(self.pop_sum) * eei / et
+
         local_entropy = self.cal_localEntropy()
         global_entropy = self.cal_globalEntropy()
-        if len(self.locality) == 0:
-            et = global_entropy * np.sum(self.pop_sum)
-            eei = np.asarray(global_entropy - local_entropy)
-            h_local = np.asarray(self.pop_sum) * eei / et
-        else:
-            et = global_entropy * np.sum(self.pop_sum)
-            eei = np.asarray(global_entropy - local_entropy)
-            h_local = np.asarray(self.pop_sum) * eei / et
+
+        et = global_entropy * np.sum(self.pop_sum)
+        eei = np.asarray(global_entropy - local_entropy)
+        h_local = np.asarray(self.pop_sum) * eei / et
+
         return h_local
 
     def cal_globalIndexH(self):
@@ -232,6 +256,5 @@ class Segreg(object):
         """
         h_local = self.cal_localIndexH()
         h_global = np.sum(h_local)
-        return h_global
 
-# TODO create function to save results to local file, transpose from jupyter to python class
+        return h_global
