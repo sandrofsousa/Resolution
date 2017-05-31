@@ -178,7 +178,7 @@ class Segreg(object):
         if len(self.locality) == 0:
             proportion = np.asarray(self.pop / self.pop_sum)
         else:
-            proportion = np.asarray(self.locality / self.pop_sum)   # changed to use pop sum
+            proportion = np.asarray(self.locality / np.sum(self.locality, axis=1).reshape(self.n_location, 1))
         entropy = proportion * np.log(1 / proportion)
         entropy[np.isnan(entropy)] = 0
         entropy[np.isinf(entropy)] = 0
@@ -219,7 +219,7 @@ class Segreg(object):
             eei = np.asarray(global_entropy - local_entropy)
             h_local = np.asarray(self.pop_sum) * eei / et
         else:
-            et = global_entropy * np.sum(self.locality)
+            et = global_entropy * np.sum(self.pop_sum)
             eei = np.asarray(global_entropy - local_entropy)
             h_local = np.asarray(self.pop_sum) * eei / et
         return h_local
@@ -231,7 +231,7 @@ class Segreg(object):
         :return: values with global index for each group.
         """
         h_local = self.cal_localIndexH()
-        h_global = np.sum(h_local, axis=0)
+        h_global = np.sum(h_local)
         return h_global
 
 # TODO create function to save results to local file, transpose from jupyter to python class
