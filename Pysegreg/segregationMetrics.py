@@ -201,9 +201,11 @@ class Segreg(object):
             proportion = np.asarray(self.pop / self.pop_sum)
 
         else:
-            proportion = np.asarray(self.locality / np.sum(self.locality, axis=1).reshape(self.n_location, 1))
+            polygon_sum = np.sum(self.locality, axis=1).reshape(self.n_location, 1)
+            proportion = np.asarray(self.locality / polygon_sum)
 
         entropy = proportion * np.log(1 / proportion)
+
         entropy[np.isnan(entropy)] = 0
         entropy[np.isinf(entropy)] = 0
         entropy = np.sum(entropy, axis=1)
@@ -220,6 +222,7 @@ class Segreg(object):
         pop_total = np.sum(self.pop_sum)
         prop = np.asarray(np.sum(self.pop, axis=0))[0]
 
+        # loop at sum of each population groups
         for group in prop:
             group_idx = group / pop_total * np.log(1 / (group / pop_total))
             group_score.append(group_idx)
