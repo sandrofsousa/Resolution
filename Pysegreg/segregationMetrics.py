@@ -69,10 +69,10 @@ class Segreg(object):
 
     def cal_timeMatrix(self, bandwidth, weightmethod, matrix):
         """
-        This function calculate the local population intensity for all groups.
+        This function calculate the local population intensity for all groups based on a time matrix.
         :param bandwidth: bandwidth for neighborhood in meters
         :param weightmethod: 1 for gaussian, 2 for bi-square and empty for moving window
-        :param filename: path/file for input time matrix
+        :param matrix: path/file for input time matrix
         :return: 2d array like with population intensity for all groups
         """
         n_local = self.location.shape[0]
